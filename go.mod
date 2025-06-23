@@ -3,7 +3,6 @@ module main.go
 go 1.23.6
 
 require (
-	github.com/bytedance/sonic v1.13.3
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -23,3 +22,4 @@ require (
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.0
 	nhooyr.io/websocket v1.8.10
+)
