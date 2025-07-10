@@ -3,7 +3,6 @@ module main.go
 go 1.23.6
 
 require (
-	github.com/bytedance/sonic v1.13.3
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/gorilla/websocket v1.5.3
 	gorm.io/gorm v1.30.0
@@ -32,5 +31,12 @@ require (
 	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
+<<<<<<< HEAD
 	golang.org/x/text v0.26.0 // indirect
+=======
+	golang.org/x/text v0.26.0
+	gorm.io/driver/postgres v1.6.0
+	gorm.io/gorm v1.30.0
+	nhooyr.io/websocket v1.8.10
+>>>>>>> 7f9fa878aa66558eda9e67dfd4f64e0e97b288a9
 )
