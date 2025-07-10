@@ -1,12 +1,12 @@
 package bybitobject
 
-// Ключи для tickerStates
-type stateKey struct {
-	chatID    int64
-	ticker    string
-	direction string
+// Делаем структуры публичными
+type StateKey struct {
+	ChatID    int64
+	Ticker    string
+	Direction string
 }
 
-type stateValue struct {
-	lastTriggerTime int64
+type StateValue struct {
+	LastTriggerTime int64
 }

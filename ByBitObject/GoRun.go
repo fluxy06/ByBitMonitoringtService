@@ -162,8 +162,8 @@ func runWSMonitor(
 			change := (close/open - 1) * 100
 
 			timestamp := kline.Data[0].Timestamp
-			keyLong := stateKey{chatID, ticker, "long"}
-			keyShort := stateKey{chatID, ticker, "short"}
+			keyLong := StateKey{chatID, ticker, "long"}
+			keyShort := StateKey{chatID, ticker, "short"}
 
 			// Проверка лонг сигнала
 			if change >= threshold {
@@ -193,25 +193,25 @@ func runWSMonitor(
 }
 
 // Проверка интервала между уведомлениями
-func checkCooldown(key *stateKey, currentTime int64) bool {
+func checkCooldown(key *StateKey, currentTime int64) bool {
 	val, ok := tickerStates.Load(*key)
 	if !ok {
 		return true
 	}
 
-	lastTime := val.(*stateValue).lastTriggerTime
+	lastTime := val.(*StateValue).LastTriggerTime
 	return currentTime-lastTime >= int64(cooldownPeriod.Seconds())*1000
 }
 
 // Обновление состояния
-func updateState(key *stateKey, timestamp int64) {
-	tickerStates.Store(*key, &stateValue{
-		lastTriggerTime: timestamp,
+func updateState(key *StateKey, timestamp int64) {
+	tickerStates.Store(*key, &StateValue{
+		LastTriggerTime: timestamp,
 	})
 }
 
 // Запуск мониторинга
-func startMonitoring(
+func StartMonitoring(
 	threshold float64,
 	timeframe string,
 	chatID int64,
@@ -226,7 +226,7 @@ func startMonitoring(
 	if mode == "all" {
 		tickers, err = getAllUSDPairs(category)
 	} else {
-		tickers, err = getUserTickers(chatID, db)
+		tickers, err = GetUserTickers(chatID, db)
 	}
 
 	if err != nil || len(tickers) == 0 {
@@ -260,7 +260,7 @@ func startMonitoring(
 }
 
 // Остановка мониторинга
-func stopMonitoring(chatID int64, bot Bot) {
+func StopMonitoring(chatID int64, bot Bot) {
 	if val, ok := userTasksPrice.Load(chatID); ok {
 		cancelFuncs := val.([]context.CancelFunc)
 		for _, cancel := range cancelFuncs {
@@ -274,7 +274,7 @@ func stopMonitoring(chatID int64, bot Bot) {
 }
 
 // Получение тикеров пользователя из БД
-func getUserTickers(chatID int64, db *gorm.DB) ([]string, error) {
+func GetUserTickers(chatID int64, db *gorm.DB) ([]string, error) {
 	var userTickers []struct {
 		NameTicker string
 	}
@@ -294,9 +294,4 @@ func getUserTickers(chatID int64, db *gorm.DB) ([]string, error) {
 		tickers[i] = t.NameTicker
 	}
 	return tickers, nil
-}
-
-// Интерфейс бота для отправки сообщений
-type Bot interface {
-	SendMessage(chatID int64, text string)
 }
