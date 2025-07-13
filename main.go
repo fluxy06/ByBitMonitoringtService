@@ -3,95 +3,66 @@ package main
 import (
 	"log"
 	"os"
-	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"SctiptByBit/bybitobject"
+	"ScriptByBit/help"
 )
 
-// Функция для получения chat ID
-func getChatID(bot *bybitobject.TelegramBot) int64 {
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 30
-
-	updates := bot.api.GetUpdatesChan(u)
-	log.Println("Send any message to the bot to get your chat ID...")
-
-	for update := range updates {
-		if update.Message != nil {
-			log.Printf("Your chat ID: %d", update.Message.Chat.ID)
-			return update.Message.Chat.ID
-		}
-	}
-	return 0
-}
-
 func main() {
-	// Загрузка переменных окружения
-	err := godotenv.Load("case.env")
-	if err != nil {
-		log.Fatal("Error loading .env file: ", err)
+	// Загрузка .env
+	if err := godotenv.Load("case.env"); err != nil {
+		log.Fatal("Ошибка загрузки .env:", err)
 	}
 
-	// Получение токена бота
+	// Получение токена
 	token := os.Getenv("TELEGRAM_BOT_TOKEN")
 	if token == "" {
-		log.Fatal("TELEGRAM_BOT_TOKEN is not set")
-	}
-
-	// Получение DSN для базы данных
-	dsn := os.Getenv("DB_DSN")
-	if dsn == "" {
-		log.Fatal("DB_DSN is not set")
+		log.Fatal("TELEGRAM_BOT_TOKEN не установлен")
 	}
 
 	// Подключение к базе данных
+	dsn := os.Getenv("DB_DSN")
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Failed to connect to database: ", err)
+		log.Fatal("Ошибка подключения к БД:", err)
 	}
-
-	// Проверка подключения к БД
-	sqlDB, err := db.DB()
-	if err != nil {
-		log.Fatal("Failed to get generic database object: ", err)
-	}
+	sqlDB, _ := db.DB()
 	defer sqlDB.Close()
-
 	if err := sqlDB.Ping(); err != nil {
-		log.Fatal("Failed to ping database: ", err)
+		log.Fatal("Ошибка ping к БД:", err)
 	}
-	log.Println("Successfully connected to database!")
+	log.Println("База данных подключена")
 
-	// Создание экземпляра бота
-	telegramBot, err := bybitobject.NewTelegramBot(token)
+	// Создание бота
+	telegramBot, err := help.NewTelegramBot(token)
 	if err != nil {
-		log.Fatalf("Error creating bot: %v", err)
+		log.Fatal("Ошибка создания Telegram-бота:", err)
 	}
 
-	// Получение chat ID
-	chatID := getChatID(telegramBot)
-	log.Printf("Using chat ID: %d", chatID)
-
-	// Запуск мониторинга
-	bybitobject.StartMonitoring(
-		5.0,         // threshold
-		"15m",       // timeframe
-		chatID,      // ваш chat ID
-		telegramBot, // бот
-		"linear",    // category
-		"all",       // mode
-		db,          // подключение к БД
-	)
-
-	log.Println("Monitoring started!")
-
-	// Бесконечный цикл чтобы программа не завершалась
-	for {
-		time.Sleep(1 * time.Hour)
+	// 🛠 Удаляем старый webhook, если он есть
+	if _, err := telegramBot.API.Request(tgbotapi.DeleteWebhookConfig{
+		DropPendingUpdates: true,
+	}); err != nil {
+		log.Fatalf("Ошибка удаления webhook: %v", err)
 	}
+
+	// Устанавливаем БД глобально
+	help.DbGlobal = db
+
+	// Запуск слушателя бота
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[PANIC] в StartListening: %v", r)
+			}
+		}()
+		log.Println("Бот запущен и слушает команды...")
+		telegramBot.StartListening()
+	}()
+
+	select {} // блокируем main-поток
 }

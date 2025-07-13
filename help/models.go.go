@@ -1,4 +1,4 @@
-package bybitobject
+package help
 
 import (
 	"time"

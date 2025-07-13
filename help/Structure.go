@@ -1,4 +1,4 @@
-package bybitobject
+package help
 
 // Делаем структуры публичными
 type StateKey struct {
